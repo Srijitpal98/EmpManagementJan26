@@ -5,9 +5,11 @@ import com.srijit.empmanagement.dtos.EmployeeResponse;
 import com.srijit.empmanagement.exceptions.ResourceNotFoundException;
 import com.srijit.empmanagement.models.Employee;
 import com.srijit.empmanagement.repositories.EmployeeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
@@ -25,11 +27,15 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public List<EmployeeResponse> getAll() {
-        return employeeRepository.findAll()
-                .stream()
-                .map(this::mapToResponse)
-                .toList();
+    public Page<EmployeeResponse> getAll(int page, int size, String sortBy, String sortDir) {
+        // Pagination and sorting logic to be implemented
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
+        return employeeRepository.findAll(pageRequest)
+                .map(this::mapToResponse);
     }
 
     @Override
@@ -53,6 +59,29 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public void delete(Long id) {
         employeeRepository.deleteById(id);
+    }
+
+    @Override
+    public Page<EmployeeResponse> search(String department, String name, int page, int size, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Employee> result;
+
+        if (department != null && name != null) {
+            result = employeeRepository.findByDepartmentIgnoreCaseAndNameContainingIgnoreCase(department, name, pageable);
+        } else if (department != null) {
+            result = employeeRepository.findByDepartmentIgnoreCase(department, pageable);
+        } else if (name != null) {
+            result = employeeRepository.findByNameContainingIgnoreCase(name, pageable);
+        } else {
+            result = employeeRepository.findAll(pageable);
+        }
+
+        return result.map(this::mapToResponse);
     }
 
     private Employee mapToEntity(EmployeeRequest dto) {

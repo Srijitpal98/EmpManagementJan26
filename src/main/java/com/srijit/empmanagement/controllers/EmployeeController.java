@@ -5,10 +5,8 @@ import com.srijit.empmanagement.dtos.EmployeeResponse;
 import com.srijit.empmanagement.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/employee")
@@ -22,8 +20,13 @@ public class EmployeeController {
     }
 
     @GetMapping
-    public List<EmployeeResponse> getAllEmployees() {
-        return employeeService.getAll();
+    public Page<EmployeeResponse> getAllEmployees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        return employeeService.getAll(page, size, sortBy, sortDir);
     }
 
     @GetMapping("/{id}")
@@ -44,5 +47,16 @@ public class EmployeeController {
     @DeleteMapping("/{id}")
     public void deleteEmployee(@PathVariable Long id) {
         employeeService.delete(id);
+    }
+
+    @GetMapping("/search")
+    public Page<EmployeeResponse> searchEmployees(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        return employeeService.search(department, name, page, size, sortBy, sortDir);
     }
 }
