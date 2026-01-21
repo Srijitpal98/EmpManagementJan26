@@ -2,6 +2,7 @@ package com.srijit.empmanagement.services;
 
 import com.srijit.empmanagement.dtos.EmployeeRequest;
 import com.srijit.empmanagement.dtos.EmployeeResponse;
+import com.srijit.empmanagement.exceptions.DuplicateResourceException;
 import com.srijit.empmanagement.exceptions.ResourceNotFoundException;
 import com.srijit.empmanagement.models.Employee;
 import com.srijit.empmanagement.repositories.EmployeeRepository;
@@ -22,6 +23,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponse create(EmployeeRequest dto) {
+        if(employeeRepository.existsByEmail(dto.getEmail())) {
+            throw new DuplicateResourceException(
+                    "Employee with Email " + dto.getEmail() + " already exists");
+        }
+
         Employee employee = mapToEntity(dto);
         return mapToResponse(employeeRepository.save(employee));
     }
@@ -49,6 +55,14 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeResponse update(Long id, EmployeeRequest dto) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with id " + id));
+
+        if(!employee.getEmail().equals(dto.getEmail())
+                && employeeRepository.existsByEmail(dto.getEmail())) {
+            throw new DuplicateResourceException(
+                    "Employee with email " + dto.getEmail() + " already exists"
+            );
+        }
+
         employee.setName(dto.getName());
         employee.setEmail(dto.getEmail());
         employee.setDepartment(dto.getDepartment());
